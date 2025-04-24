@@ -60,14 +60,14 @@ ros2 launch ros2_laser_scan_matcher start_matcher.launch.py
 * **Terminal 5: Mapping with SLAM Toolbox**
 ```bash
 cd /ros2_ws/
-colcon build --packages-select mecanum_interface
+colcon build --packages-select koubot_nav
 source install/setup.bash
-ros2 launch mecanum_interface slam_toolbox_lidar_only.launch.py
+ros2 launch koubot_nav slam_toolbox_lidar_only.launch.py
 ```
 
 * **Terminal 6: Save the Map**
 ```bash
-cd /ros2_ws/src/mecanum_interface/maps
+cd /ros2_ws/src/koubot_nav/maps
 ros2 run nav2_map_server map_saver_cli -f my_map
 ```
 

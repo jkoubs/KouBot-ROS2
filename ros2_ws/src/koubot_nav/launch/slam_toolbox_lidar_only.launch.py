@@ -11,7 +11,7 @@ def generate_launch_description():
             output='screen',
             parameters=[
                 {'use_sim_time': False},
-                {'slam_params_file': '/ros2_ws/src/mecanum_interface/config/mapper_params_online_async.yaml'}
+                {'slam_params_file': '/ros2_ws/src/koubot_nav/config/mapper_params_online_async.yaml'}
             ],
             arguments=['--ros-args', '--param', 'queue_size:=50']
         ),
