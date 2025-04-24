@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  vnc-server:
+    image: jkoubi/vnc-server:latest
+    container_name: my_vnc_container
+    ports:
+      - "5901:5901"
+    environment:
+      DISPLAY: ":1"
+      GEOMETRY: "1920x1080"
+      DEPTH: "24"
+    volumes:
+      - ./supervisord.conf:/etc/supervisor/conf.d/supervisord.conf
+      - ./vnc_passwd/passwd:/root/.vnc/passwd:ro  # Ensure the password file is mounted correctly
+      - /home/ubuntu/KouBot-ROS2/ros2_ws/src:/ros2_ws/src:rw
+    command: >
+      /bin/bash -c "
+      mkdir -p /root/.vnc &&
+      vncserver :1 -geometry 1920x1080 -depth 24 -localhost no &&
+      tail -f /dev/null"
+
+# version: '3.8'
+# services:
+#   vnc:
+#     image: jkoubi/vnc-server:latest
+#     ports:
+#       - "5901:5901"
+#     environment:
+#       - DISPLAY=:1
+#     volumes:
+#       - ./supervisord.conf:/etc/supervisor/conf.d/supervisord.conf
+
+
+
+
+# Execute: docker compose -f docker-compose.yml up

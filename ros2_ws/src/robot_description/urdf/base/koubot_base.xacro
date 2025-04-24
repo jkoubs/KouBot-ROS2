@@ -1,0 +1,438 @@
+<?xml version="1.0"?>
+<robot name="koubot" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <xacro:property name="robot_name" value="koubot"/>
+
+    <xacro:property name="chassis_mass" value="5.0"/>
+    <xacro:property name="chassis_width" value="0.155"/>
+    <xacro:property name="chassis_depth" value="0.2"/>
+    <xacro:property name="chassis_height" value="0.11"/>
+
+    <xacro:property name="wheel_mass" value="0.5"/>
+    <xacro:property name="wheel_radius" value="0.04"/>
+    <xacro:property name="wheel_length" value="0.036"/>
+    <xacro:property name="wheel_offset_x" value="0.05"/>
+    <xacro:property name="wheel_offset_y" value="0.114"/>
+    <xacro:property name="wheel_offset_z" value="0.04"/>
+
+    <xacro:property name="lidar_mass" value="0.2"/>
+    <xacro:property name="lidar_radius" value="0.035"/>
+    <xacro:property name="lidar_length" value="0.05"/>
+
+    <xacro:property name="oakd_length" value="0.091" />
+    <xacro:property name="oakd_width" value="0.028" />
+    <xacro:property name="oakd_depth" value="0.0175" />
+    <xacro:property name="oakd_mass" value="0.061" />
+
+    <xacro:property name="M_PI" value="3.141592654"/>
+
+    <!--Inertia Calculator for Chassis-->
+    <xacro:macro name="chassis_inertia" params="mass_chassis x y z">
+        <inertia  ixx="${mass_chassis*(y*y+z*z)/12.0}" ixy = "0" ixz = "0"
+              iyy="${mass_chassis*(x*x+z*z)/12.0}" iyz = "0"
+              izz="${mass_chassis*(x*x+y*y)/12.0}"
+        />
+    </xacro:macro>
+
+    <!--Inertia Calculator for Camera-->
+    <xacro:macro name="camera_inertia" params="mass_camera x y z">
+        <inertia  ixx="${mass_camera*(y*y+z*z)/12.0}" ixy = "0" ixz = "0"
+              iyy="${mass_camera*(x*x+z*z)/12.0}" iyz = "0"
+              izz="${mass_camera*(x*x+y*y)/12.0}"
+        />
+    </xacro:macro>
+
+    <!--Inertia Calculator for Wheels-->
+    <xacro:macro name="wheels_inertia" params="mass_wheel r h">
+        <inertia  ixx="${mass_wheel*(3*r*r + h*h)/12.0}" ixy = "0" ixz = "0"
+              iyy="${mass_wheel*(3*r*r + h*h)/12.0}" iyz = "0"
+              izz="${mass_wheel*(r*r)/2.0}"
+        />
+    </xacro:macro>
+
+    <!--Inertia Calculator for LiDAR-->
+    <xacro:macro name="lidar_inertia" params="mass_lidar r h">
+        <inertia  ixx="${mass_lidar*(3*r*r + h*h)/12.0}" ixy = "0" ixz = "0"
+              iyy="${mass_lidar*(3*r*r + h*h)/12.0}" iyz = "0"
+              izz="${mass_lidar*(r*r)/2.0}"
+        />
+    </xacro:macro>
+
+    <!-- BASE FOOTPRINT -->
+    <link name="base_footprint">
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <box size="0.0001 0.0001 0.0001" />
+            </geometry>
+        </visual>
+    </link>
+
+    <joint name="base_footprint_joint" type="fixed">
+        <origin xyz="0 0 0.081" rpy="0 0 0" />
+        <parent link="base_footprint"/>
+        <child link="base_link" />
+    </joint>
+
+<!-- BASE LINK -->
+    <link name="base_link">
+        <inertial>
+            <mass value="${chassis_mass}" />
+            <origin xyz="0 0 0.0" />
+            <xacro:chassis_inertia mass_chassis="${chassis_mass}" x="${chassis_depth}" y="${chassis_width}" z="${chassis_height}"/>
+        </inertial>
+        <collision>
+            <origin xyz="0 0 0" rpy="0 0 ${M_PI/2}" />
+            <geometry>
+                <box size="${chassis_width} ${chassis_depth} ${chassis_height}" />
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="0 0 -${chassis_height/2}" rpy="-${M_PI/2} 0 0" />
+            <geometry>
+                <mesh filename="package://robot_description/meshes/chassis.dae"/>
+            </geometry>
+        </visual>
+    </link>
+
+    <!-- Joint - base_link / front left wheel -->
+    <joint name="joint_base_link_front_left_wheel" type="continuous">
+        <origin rpy="0 0 0" xyz="${wheel_offset_x} ${wheel_offset_y} -${wheel_offset_z}" />
+        <child link="front_left_wheel" />
+        <parent link="base_link" />
+        <axis rpy="0 0 0" xyz="0 1 0" />
+        <limit effort="10000" velocity="1000" />
+        <joint_properties damping="1.0" friction="1.0" />
+    </joint>
+
+    <!-- FRONT LEFT WHEEL -->
+    <link name="front_left_wheel">
+        <inertial>
+            <mass value="${wheel_mass}" />
+            <origin xyz="0 0 0" rpy="${M_PI/2} 0 0" />
+            <xacro:wheels_inertia mass_wheel="${wheel_mass}" r="${wheel_radius}" h="${wheel_length}"/>
+        </inertial>
+
+        <collision>
+            <origin rpy="${M_PI/2} 0 0" xyz="0 0 0" />
+            <geometry>
+                <cylinder length="${wheel_length}" radius="${wheel_radius}"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin rpy="${M_PI} 0 0" xyz="0 0 0" />
+            <geometry>
+                <mesh filename="package://robot_description/meshes/wheels.dae"/>
+            </geometry>
+        </visual>
+    </link>
+
+    <!-- Joint - base_link / front right wheel -->
+    <joint name="joint_base_link_front_right_wheel" type="continuous">
+        <origin rpy="0 0 0" xyz="${wheel_offset_x} -${wheel_offset_y} -${wheel_offset_z}" />
+        <child link="front_right_wheel" />
+        <parent link="base_link" />
+        <axis rpy="0 0 0" xyz="0 1 0" />
+        <limit effort="10000" velocity="1000" />
+        <joint_properties damping="1.0" friction="1.0" />
+    </joint>
+
+    <!-- FRONT RIGHT WHEEL -->
+    <link name="front_right_wheel">
+        <inertial>
+            <mass value="${wheel_mass}" />
+            <origin xyz="0 0 0" rpy="${M_PI/2} 0 0" />
+            <xacro:wheels_inertia mass_wheel="${wheel_mass}" r="${wheel_radius}" h="${wheel_length}"/>
+        </inertial>
+
+        <collision>
+            <origin rpy="${M_PI/2} 0 0" xyz="0 0 0" />
+            <geometry>
+                <cylinder length="${wheel_length}" radius="${wheel_radius}"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin rpy="${M_PI} 0 0" xyz="0 0 0" />
+            <geometry>
+                <mesh filename="package://robot_description/meshes/wheels.dae"/>
+            </geometry>
+        </visual>
+    </link>
+
+    <!-- Joint - base_link / back right wheel -->
+    <joint name="joint_base_link_back_right_wheel" type="continuous">
+        <origin rpy="0 0 0" xyz="-${wheel_offset_x} -${wheel_offset_y} -${wheel_offset_z}" />
+        <child link="back_right_wheel" />
+        <parent link="base_link" />
+        <axis rpy="0 0 0" xyz="0 1 0" />
+        <limit effort="10000" velocity="1000" />
+        <joint_properties damping="1.0" friction="1.0" />
+    </joint>
+
+    <!-- BACK RIGHT WHEEL -->
+    <link name="back_right_wheel">
+        <inertial>
+            <mass value="${wheel_mass}" />
+            <origin xyz="0 0 0" rpy="${M_PI/2} 0 0" />
+            <xacro:wheels_inertia mass_wheel="${wheel_mass}" r="${wheel_radius}" h="${wheel_length}"/>
+        </inertial>
+
+        <collision>
+            <origin rpy="${M_PI/2} 0 0" xyz="0 0 0" />
+            <geometry>
+                <cylinder length="${wheel_length}" radius="${wheel_radius}"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin rpy="${M_PI} 0 0" xyz="0 0 0" />
+            <geometry>
+                <mesh filename="package://robot_description/meshes/wheels.dae"/>
+            </geometry>
+        </visual>
+    </link>
+
+    <!-- Joint - base_link / back left wheel -->
+    <joint name="joint_base_link_back_left_wheel" type="continuous">
+        <origin rpy="0 0 0" xyz="-${wheel_offset_x} ${wheel_offset_y} -${wheel_offset_z}" />
+        <child link="back_left_wheel" />
+        <parent link="base_link" />
+        <axis rpy="0 0 0" xyz="0 1 0" />
+        <limit effort="10000" velocity="1000" />
+        <joint_properties damping="1.0" friction="1.0" />
+    </joint>
+
+    <!-- BACK LEFT WHEEL -->
+    <link name="back_left_wheel">
+        <inertial>
+            <mass value="${wheel_mass}" />
+            <origin xyz="0 0 0" rpy="${M_PI/2} 0 0" />
+            <xacro:wheels_inertia mass_wheel="${wheel_mass}" r="${wheel_radius}" h="${wheel_length}"/>
+        </inertial>
+
+        <collision>
+            <origin rpy="${M_PI/2} 0 0" xyz="0 0 0" />
+            <geometry>
+                <cylinder length="${wheel_length}" radius="${wheel_radius}"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin rpy="${M_PI} 0 0" xyz="0 0 0" />
+            <geometry>
+                <mesh filename="package://robot_description/meshes/wheels.dae"/>
+            </geometry>
+        </visual>
+    </link>
+
+<!--###########################################################################-->
+    <!-- LiDAR - RPA1-->
+
+    <link name="lidar_link" type="laser">
+        
+        <inertial>
+            <mass value="${lidar_mass}"/>
+            <origin rpy="0 0 0.0" xyz="0 0 0.0"/>
+            <xacro:lidar_inertia mass_lidar="${lidar_mass}" r="${lidar_radius}" h="${lidar_length}"/>
+        </inertial>
+        <visual>
+            <origin rpy="1.57 0 ${M_PI}" xyz="-0.015 -0.033 -0.06"/>
+            <geometry>
+                <mesh filename="package://robot_description/meshes/lidar.dae" scale="0.001 0.001 0.001"/>
+            </geometry>
+        </visual>
+        <collision>
+            <origin rpy="0 0 0" xyz="-0.037 0.0 -0.036"/>
+            <geometry>
+                <cylinder length="${lidar_length}" radius="${lidar_radius}"/>
+            </geometry>
+        </collision>
+    </link>
+
+    <joint name="lidar_joint" type="fixed">
+        <origin rpy="0 0 0" xyz="0.095 0 0.112"/>
+        <parent link="base_link"/>
+        <child link="lidar_link"/>
+    </joint>
+
+
+    <!--Laser sensor plugin-->
+    <gazebo reference="lidar_link">
+        <sensor name="head_hokuyo_sensor" type="ray">
+            <pose>0 0 0 0 0 0</pose>
+            <visualize>false</visualize>
+            <update_rate>20</update_rate>
+            <always_on>true</always_on>
+            <ray>
+                <scan>
+                    <horizontal>
+                        <samples>1080</samples>
+                        <resolution>1.0</resolution>
+                        <min_angle>-1.570796</min_angle>
+                        <max_angle>1.570796</max_angle>
+                    </horizontal>
+                </scan>
+                <range>
+                    <min>0.02</min>
+                    <max>10.0</max>
+                    <resolution>0.01</resolution>
+                </range>
+                <noise>
+                    <type>gaussian</type>
+                    <mean>0.0</mean>
+                    <stddev>0.01</stddev>
+                </noise>
+            </ray>
+            <plugin name="laser" filename="libgazebo_ros_ray_sensor.so">
+                <ros>
+                    <remapping>~/out:=scan</remapping>
+                </ros>
+                <output_type>sensor_msgs/LaserScan</output_type>
+                <frame_name>lidar_link</frame_name>
+            </plugin>
+        </sensor>
+    </gazebo>
+
+<!--###########################################################################-->
+
+      <!-- Camera joint -->
+
+    <joint name="camera_joint" type="fixed">
+        <!-- Point cloud frustrum is 90 degrees off from visual frame --> 
+        <origin rpy=" 0 -${M_PI/8} 0" xyz="0.1 0 0.15" />
+        <parent link="base_link" />
+        <child link="camera_oakd_lite" />
+    </joint> 
+
+    <!-- Camera - Oak-D Lite -->
+
+    <link name="camera_oakd_lite">
+        <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+        <inertial>
+            <mass value="${oakd_mass}"/>
+            <origin rpy="0 0 0.0" xyz="0 0 0"/>
+            <xacro:camera_inertia mass_camera="${oakd_mass}" x="${oakd_length}" y="${oakd_width}" z="${oakd_depth}"/>
+        </inertial>
+        <visual>
+            <origin rpy="${M_PI/2} 0 -${M_PI/2}" xyz="-0.01 0.04 -0.02" />
+            <geometry>
+                <mesh filename="package://robot_description/meshes/OAK-D-LITE.dae" scale="0.001 0.001 0.001"/>
+            </geometry>
+        </visual>
+        <collision>
+            <origin rpy="${M_PI/2} 0 -${M_PI/2}" xyz="-0.01 0.0 -0.01" />
+            <geometry>
+                <box size="${oakd_length} ${oakd_width} ${oakd_depth}"/>
+            </geometry>
+        </collision>
+    </link>
+      
+
+    <joint name="camera_optical_joint" type="fixed">
+        <parent link="camera_oakd_lite"/>
+        <!-- <axis rpy="0 0 0" xyz="0 1 0" /> -->
+        <child link="camera_link_optical"/>
+        <origin xyz="0 0 0.0" rpy="0 0 0"/>
+    </joint>
+
+    <link name="camera_link_optical"></link>\
+
+
+    <!-- depth camera -->
+    <joint name="camera_depth_optical_joint" type="fixed">
+        <parent link="camera_oakd_lite"/>
+        <!-- <axis rpy="0 0 0" xyz="0 1 0" /> -->
+        <child link="camera_depth_link_optical"/>
+        <origin xyz="0 0 0.0" rpy="${M_PI/2} ${M_PI} ${M_PI/2}"/>
+    </joint>
+
+     <link name="camera_depth_link_optical"></link>
+    <!-- depth camera -->
+
+
+    <gazebo reference="camera_oakd_lite">
+        <!-- <material>Gazebo/Red</material> -->
+
+        <!-- camera sensor -->
+        <sensor name="camera" type="camera">
+            <pose>0 0 0 0 0 0</pose>
+            <visualize>true</visualize>
+            <update_rate>10</update_rate>
+            <camera>
+                <horizontal_fov>1.089</horizontal_fov>
+                <image>
+                    <format>R8G8B8</format>
+                    <width>640</width>
+                    <height>480</height>
+                </image>
+                <clip>
+                    <near>0.05</near>
+                    <far>8.0</far>
+                </clip>
+            </camera>
+
+            <plugin name="depth_camera_controller" filename="libgazebo_ros_camera.so">
+                <frame_name>camera_link_optical</frame_name>
+                <topicName>/camera/image_raw</topicName>
+                <!-- <baseline>0.2</baseline>
+                <alwaysOn>true</alwaysOn>
+                <updateRate>0.0</updateRate>
+                <pointCloudCutoff>0.2</pointCloudCutoff>
+                <pointCloudCutoffMax>10.0</pointCloudCutoffMax>
+                <distortionK1>0</distortionK1>
+                <distortionK2>0</distortionK2>
+                <distortionK3>0</distortionK3>
+                <distortionT1>0</distortionT1>
+                <distortionT2>0</distortionT2>
+                <CxPrime>0</CxPrime>
+                <Cx>0</Cx>
+                <Cy>0</Cy>
+                <focalLength>0</focalLength>
+                <hackBaseline>0</hackBaseline>
+                <ros>
+                    <imageTopicName>/camera/color/image_raw</imageTopicName>
+                    <cameraInfoTopicName>/camera/color/camera_info</cameraInfoTopicName>
+                    <depthImageTopicName>/camera/depth/image_raw</depthImageTopicName>
+                    <pointCloudTopicName>/camera/depth/points</pointCloudTopicName>
+                </ros>  -->
+            </plugin>
+        </sensor>
+
+        <!-- Point Cloud Sensor -->
+        <sensor name="point_cloud_sensor" type="depth">
+            <!-- Adjust the pose of the point cloud sensor relative to the camera link -->
+            <pose>0 0 0 0 0 0</pose>
+            <!-- Define parameters for the point cloud sensor -->
+            <visualize>true</visualize>
+            <update_rate>10</update_rate>
+            <depth>
+                <!-- Adjust depth sensor parameters as needed -->
+                <horizontal_fov>1.089</horizontal_fov>
+                <!-- <image>
+                    <format>B8R8G8</format>
+                    <width>640</width>
+                    <height>480</height>
+                </image> -->
+                <!-- Specify clip planes if needed -->
+                <clip>
+                    <near>0.05</near>
+                    <far>8.0</far>
+                </clip>
+            </depth>
+            <!-- Plugin for handling point cloud data -->
+            <plugin name="point_cloud_controller" filename="libgazebo_ros_camera.so">
+                <!-- Specify the TF frame for the point cloud sensor -->
+                <frame_name>camera_depth_link_optical</frame_name>
+                <!-- Publish point cloud data to this topic -->
+                <topicName>/point_cloud_sensor/points</topicName>
+                <!-- Specify the encoding for the point cloud data -->
+                <encoding>B8G8R8</encoding> <!-- Assuming your plugin supports BGR for point clouds -->
+
+            </plugin>
+        </sensor>
+    </gazebo>
+<!--###########################################################################-->
+
+    <!-- Add Gazebo Properties from file named koubot_base.gazebo -->
+    
+    <xacro:include filename="$(find robot_description)/urdf/base/koubot_base.gazebo" />
+
+</robot>

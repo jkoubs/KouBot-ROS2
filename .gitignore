@@ -1,0 +1,18 @@
+# ROS 2 build folders
+build/
+install/
+log/
+
+# VSCode config
+.vscode/
+
+# Docker secrets
+docker/vnc_passwd/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Misc
+*.swp
+.DS_Store

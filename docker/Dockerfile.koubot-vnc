@@ -1,0 +1,82 @@
+# FROM galactic_env
+FROM jkoubi/galactic_env:multi_platform
+
+# ENV DEBIAN_FRONTEND=noninteractive
+SHELL ["/bin/bash", "-c"]
+
+RUN echo "source /ros2_ws/install/setup.bash" >> ~/.bashrc
+
+# Setup colcon_cd
+RUN echo "source /usr/share/colcon_cd/function/colcon_cd.sh" >> ~/.bashrc
+RUN echo "export _colcon_cd_root=/opt/ros/galactic/" >> ~/.bashrc
+
+# Setup colcon tab completion
+RUN echo "source /usr/share/colcon_argcomplete/hook/colcon-argcomplete.bash" >> ~/.bashrc
+
+COPY /ros2_ws/ /ros2_ws/
+
+# Install ultralytics for YOLOv8
+# RUN pip3 install ultralytics
+
+# Install additional packages
+RUN apt-get update --fix-missing && \
+    apt-get install -y \
+    ros-galactic-joy \
+    ros-galactic-teleop-twist-joy && \
+    pip3 install pyserial
+
+# Update rosdep database and install dependencies
+RUN source /opt/ros/galactic/setup.bash && \
+    apt-get update --fix-missing && \
+    cd /ros2_ws/src  && \
+    # LiDAR install
+    git clone -b ros2 https://github.com/Slamtec/rplidar_ros.git && \
+    # ros2_laser_scan_matcher install
+    git clone https://github.com/AlexKaravaev/csm.git && \
+    git clone https://github.com/AlexKaravaev/ros2_laser_scan_matcher.git && \
+    # This installs dependencies declared in package.xml from all pkgs in the src folder for ROS 2 Galactic
+    cd /ros2_ws/ && \
+    rosdep install -i --from-path src --rosdistro galactic -y --skip-keys rviz && \
+    # Build env_ws
+    colcon build --symlink-install 
+
+# Set Working directory
+WORKDIR '/ros2_ws'
+
+# Set environment variables to avoid interactive prompts
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=Etc/UTC
+
+# Install necessary packages
+RUN apt-get update && apt-get install -y \
+    tigervnc-standalone-server \
+    tigervnc-xorg-extension \
+    terminator \
+    x11-xserver-utils \
+    supervisor \
+    openbox \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set environment variables
+ENV USER=root
+ENV DISPLAY=:1
+
+# Create VNC server startup script
+RUN mkdir -p /root/.vnc && \
+    printf "#!/bin/sh\nxrdb $HOME/.Xresources\nxsetroot -solid grey\nexport DISPLAY=:1\nopenbox &\nterminator &\n" > /root/.vnc/xstartup && \
+    chmod +x /root/.vnc/xstartup
+
+# Create a default .Xresources file
+RUN echo "*customization: -color" > /root/.Xresources
+
+# Supervisor config
+RUN mkdir -p /var/log/supervisor
+COPY /docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+# Expose the VNC port
+EXPOSE 5901
+
+# Start Supervisor
+CMD ["/usr/bin/supervisord"]
+
+#jkoubi/koubot_vnc:v3 (DockerHub)
