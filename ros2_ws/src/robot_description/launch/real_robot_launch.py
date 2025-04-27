@@ -30,13 +30,14 @@ def generate_launch_description():
                 )
             }]
         ),
-
-        # # RPLIDAR node
-        # IncludeLaunchDescription(
-        #     PythonLaunchDescriptionSource(rplidar_launch)
-        # ),
-
-        # RPLIDAR Node with correct frame_id
+        # Joint State Publisher
+        Node(
+            package='joint_state_publisher',
+            executable='joint_state_publisher',
+            name='joint_state_publisher_node',
+            output="screen"
+        ),
+        # RPLIDAR Node 
         Node(
             package='rplidar_ros',
             executable='rplidar_node',
@@ -48,13 +49,4 @@ def generate_launch_description():
                 {'serial_baudrate': 115200}
             ]
         ),
-
-        # Optional: RViz2 with a saved config (or remove `arguments` to open blank)
-        # Node(
-        #     package='rviz2',
-        #     executable='rviz2',
-        #     name='rviz2',
-        #     output='screen',
-        #     arguments=['-d', os.path.join(description_pkg, 'rviz', 'real_robot_config.rviz')],
-        # )
     ])
