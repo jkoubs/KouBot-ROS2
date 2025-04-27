@@ -1,8 +1,0 @@
-bluetoothctl
-info AC:36:1B:93:81:B9
-
-Output:
-
-Paired: yes
-Trusted: yes
-Connected: yes 
