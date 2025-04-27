@@ -17,3 +17,4 @@ amcl:
     tf_broadcast: true
     queue_size: 100
     transform_tolerance: 4.0
+    robot_model_type: "omnidirectional" # Holonomic parameter
